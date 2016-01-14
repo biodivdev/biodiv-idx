@@ -4,7 +4,7 @@ biodividx:
     - elasticsearch:elasticsearch
     - taxadata:taxadata
     - dwcbot:dwcbot
-    - dwc:dwc
+    - dwc:dwcservices
   volumes:
     - .:/project
     - ~/.m2:/m2
@@ -27,7 +27,7 @@ elasticsearch:
   ports:
     - 9200:9200
   volumes:
-    - /var/data/elasticsearch/data:/usr/share/elasticsearch/data:rw
+    - /var/data/dwc-elasticsearch/data:/usr/share/elasticsearch/data:rw
 kibana:
   image: diogok/kibana
   ports:
