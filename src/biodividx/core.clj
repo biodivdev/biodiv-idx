@@ -7,7 +7,7 @@
 
 (def taxadata "http://taxadata/api/v2")
 (def dwc-bot "http://dwcbot:8383")
-(def dwc "http://dwcservices:8080/api/v1")
+(def dwc "http://dwcservices/api/v1")
 (def es "http://elasticsearch:9200/biodiv")
 
 (defn get-json
@@ -19,11 +19,9 @@
   [url body] 
   (log/info "POST JSON" url)
   (-> 
-    (http/post url
-      {:content-type :json :body (json/write-str body)})
+    (http/post url {:content-type :json :body (json/write-str body)})
     :body
-    (json/read-str :key-fn keyword)
-    :result))
+    (json/read-str :key-fn keyword)))
 
 (defn create-db
   [] (try
@@ -70,7 +68,7 @@
       (try
         (doseq [occ occs]
           (>! results (assoc occ :type "occurrence" :scientificNameWithoutAuthorship spp)))
-        (let [result (post-json (str dwc "/analysis/all" occs))]
+        (let [result (post-json (str dwc "/analysis/all") occs)]
           (log/info "Got result for" spp)
           (>! results (assoc (get-in result [:eoo :historic]) :type "eoo_historic" :scientificNameWithoutAuthorship spp))
           (>! results (assoc (get-in result [:eoo :recent]) :type "eoo_recent" :scientificNameWithoutAuthorship spp))
@@ -91,8 +89,9 @@
   (go-loop [result (<! results)]
    (when-not (nil? result)
      (log/info "Will save" (:scientificNameWithoutAuthorship result) (:type result))
-       (let [url (str es "/" (:type result) "/" (.replace (:scientificNameWithoutAuthorship result) " " "%20"))
-             doc (assoc result :timestamp (System/currentTimeMillis) :id (:scientificNameWithoutAuthorship result)) 
+       (let [id (or (:occurrenceID result) (:scientificNameWithoutAuthorship result))
+             url (str es "/" (:type result) "/" (.replace id " " "%20"))
+             doc (assoc result :timestamp (System/currentTimeMillis) :id id) 
              json-doc (json/write-str doc)]
          (try
            (log/info "Sending" url)
@@ -125,8 +124,13 @@
 
 (defn -main 
   [ & args ]
+  (log/info "Starting...")
+  (Thread/sleep (* 15 1000 ))
   (create-db)
   (while true 
+    (log/info "Will run")
     (run)
-    (Thread/sleep (* 12 60 60 1000))))
+    (Thread/sleep (* 12 60 60 1000))
+    (log/info "Will rest.")
+    ))
 
