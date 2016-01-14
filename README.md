@@ -1,14 +1,8 @@
-# gbif-analysis
+# Biodiv-IDX
 
-A Clojure library designed to ... well, that part is up to you.
-
-## Usage
-
-FIXME
+An indexer, reads taxonomy from [taxadata](http://github.com/diogok/taxadata), combine with occurrences from [dwc-bot](http://github.com/diogok/dwc-bot) and pass them thry anaylisys on [dwc-services](http://github.com/diogok/dwc-services) to index them on ElasticSearch and make available on [biodiv-ui](http://github.com/diogok/biodiv-ui).
 
 ## License
 
-Copyright © 2016 FIXME
+MIT
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
