@@ -43,7 +43,7 @@
     (when-not (nil? family)
       (log/info "Got family" family)
       (doseq [spp (get-json taxadata "/" src "/" family "/species")]
-        (>! results (assoc spp :type "taxon"))
+        (>! results [(assoc spp :type "taxon")])
         (>! species
           [(:scientificNameWithoutAuthorship spp)
            (map :scientificNameWithoutAuthorship (cons spp (:synonyms spp)))]))
@@ -66,20 +66,27 @@
     (when-not (nil? occs)
       (log/info "Got occs for" spp (count occs))
       (try
-        (doseq [occ occs]
-          (>! results (assoc occ :type "occurrence" :scientificNameWithoutAuthorship spp)))
+        (>! results (map #(assoc % :type "occurrence" :scientificNameWithoutAuthorship spp) occs))
         (let [result (post-json (str dwc "/analysis/all") occs)]
           (log/info "Got result for" spp)
-          (>! results (assoc (get-in result [:eoo :historic]) :type "eoo_historic" :scientificNameWithoutAuthorship spp))
-          (>! results (assoc (get-in result [:eoo :recent]) :type "eoo_recent" :scientificNameWithoutAuthorship spp))
-          (>! results (assoc (get-in result [:eoo :all]) :type "eoo" :scientificNameWithoutAuthorship spp))
-          (>! results (dissoc (assoc (get-in result [:aoo :historic]) :type "aoo_historic" :scientificNameWithoutAuthorship spp) :grid))
-          (>! results (dissoc (assoc (get-in result [:aoo :recent]) :type "aoo_recent" :scientificNameWithoutAuthorship spp) :grid))
-          (>! results (dissoc (assoc (get-in result [:aoo :all]) :type "aoo" :scientificNameWithoutAuthorship spp) :grid))
-          (>! results (assoc (get-in result [:clusters :historic]) :type "clusters_historic" :scientificNameWithoutAuthorship spp))
-          (>! results (assoc (get-in result [:clusters :recent]) :type "clusters_recent" :scientificNameWithoutAuthorship spp))
-          (>! results (assoc (get-in result [:clusters :all]) :type "clusters" :scientificNameWithoutAuthorship spp))
-          (>! results {:risk-assessment (:risk-assessment result) :type "risk_assessment" :scientificNameWithoutAuthorship spp}))
+          (>! results
+             (map #(assoc % :scientificNameWithoutAuthorship spp)
+              [ {:type "count" 
+                 :occurrences (dissoc (:occurrences result) :all :recent :historic)
+                 :points (dissoc (:points result) :all :recent :historic :geo)}
+                {:type "geo" :geo (get-in result [:points :geo])}
+                (assoc (get-in result [:eoo :historic]) :type "eoo_historic")
+                (assoc (get-in result [:eoo :historic]) :type "eoo_historic")
+                (assoc (get-in result [:eoo :recent]) :type "eoo_recent")
+                (assoc (get-in result [:eoo :all]) :type "eoo")
+                (dissoc (assoc (get-in result [:aoo :historic]) :type "aoo_historic") :grid)
+                (dissoc (assoc (get-in result [:aoo :recent]) :type "aoo_recent") :grid)
+                (dissoc (assoc (get-in result [:aoo :all]) :type "aoo") :grid)
+                (assoc (get-in result [:clusters :historic]) :type "clusters_historic")
+                (assoc (get-in result [:clusters :recent]) :type "clusters_recent")
+                (assoc (get-in result [:clusters :all]) :type "clusters")
+                {:risk-assessment (:risk-assessment result) :type "risk_assessment"}
+               ])))
         (catch Exception e
          (do (log/warn "Error calculating results" spp e) (.printStackTrace e))))
       (recur (<! occurrences)))))
@@ -88,21 +95,23 @@
   [results]
   (go-loop [result (<! results)]
    (when-not (nil? result)
-     (log/info "Will save" (:scientificNameWithoutAuthorship result) (:type result))
-       (let [id (or (:occurrenceID result) (:scientificNameWithoutAuthorship result))
-             url (str es "/" (:type result) "/" (.replace id " " "%20"))
-             doc (assoc result :timestamp (System/currentTimeMillis) :id id) 
-             json-doc (json/write-str doc)]
+     (log/info "Will save" (:scientificNameWithoutAuthorship (first result)) (count result))
+     (loop [docs result items []]
+       (if (empty? docs)
          (try
-           (log/info "Sending" url)
-           (http/post url
-            {:content-type :json
-             :body json-doc})
-           (log/info "Saved " (:scientificNameWithoutAuthorship result) (:type result))
+           (let [body (apply str (interpose "\n" (map json/write-str items)))]
+             (http/post (str es "/_bulk") {:body (str body "\n")}))
+           (log/info "Saved " (:scientificNameWithoutAuthorship (first result)) (count result))
            (catch Exception e
-             (do (log/warn "Error saving " (:scientificNameWithoutAuthorship result) (:type result) (.getMessage e))
-                 (log/warn json-doc)
-               (.printStackTrace e)))))
+             (do (log/warn "Error saving " (:scientificNameWithoutAuthorship (first result)) (.getMessage e))
+               (log/warn "Error body" (map json/write-str items))
+               (.printStackTrace e))))
+         (let [doc  (first docs)
+               id   (or (:occurrenceID doc) (:scientificNameWithoutAuthorship doc))]
+           (recur (rest docs)
+              (conj items 
+                {:index {:_index "biodiv" :_type (:type doc) :_id id}}
+                (assoc doc :timestamp (System/currentTimeMillis) :id id))))))
      (recur (<! results)))))
 
 (defn run
@@ -112,7 +121,6 @@
         species     (chan 5)
         occurrences (chan 2)
         results     (chan 1024)]
-
   (sources->families sources families)
   (families->species families species results)
   (species->occurrences species occurrences)
@@ -131,6 +139,5 @@
     (log/info "Will run")
     (run)
     (Thread/sleep (* 12 60 60 1000))
-    (log/info "Will rest.")
-    ))
+    (log/info "Will rest.")))
 
