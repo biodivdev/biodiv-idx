@@ -120,7 +120,7 @@
         families    (chan 2)
         species     (chan 5)
         occurrences (chan 2)
-        results     (chan 1024)]
+        results     (chan 5)]
   (sources->families sources families)
   (families->species families species results)
   (species->occurrences species occurrences)
