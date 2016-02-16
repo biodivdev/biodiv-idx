@@ -85,7 +85,7 @@
                 (assoc (get-in result [:clusters :historic]) :type "clusters_historic")
                 (assoc (get-in result [:clusters :recent]) :type "clusters_recent")
                 (assoc (get-in result [:clusters :all]) :type "clusters")
-                {:risk-assessment (:risk-assessment result) :type "risk_assessment"}
+                {:risk-assessment (:risk-assessment result) :main-risk-assessment (first (:risk-assessment result)) :type "risk_assessment"}
                ])))
         (catch Exception e
          (do (log/warn "Error calculating results" spp e) (.printStackTrace e))))
