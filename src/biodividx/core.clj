@@ -28,6 +28,22 @@
       (http/post "http://elasticsearch:9200/biodiv")
         (catch Exception e (.printStackTrace e))))
 
+(defn wat
+  [w] (log/info w) w)
+
+(defn delete [spp]
+  (try
+    (->> 
+      (-> spp
+        :scientificNameWithoutAuthorship
+        (.replace " " "%20"))
+      (str es "/_query?q=scientificNameWithoutAuthorship:")
+      (wat)
+      (http/delete)
+      (:body)
+      (log/info))
+    (catch Exception e (log/warn (.getMessage e)))))
+
 (defn sources->families
   [sources families]
   (go-loop [src (<! sources)]
@@ -43,6 +59,7 @@
     (when-not (nil? family)
       (log/info "Got family" family)
       (doseq [spp (get-json taxadata "/" src "/" family "/species")]
+        (delete spp)
         (>! results [(assoc spp :type "taxon")])
         (>! species
           [(:scientificNameWithoutAuthorship spp)
@@ -104,7 +121,7 @@
            (log/info "Saved " (:scientificNameWithoutAuthorship (first result)) (count result))
            (catch Exception e
              (do (log/warn "Error saving " (:scientificNameWithoutAuthorship (first result)) (.getMessage e))
-               (log/warn "Error body" (map json/write-str items))
+               (log/warn "Error body" (apply str (map json/write-str items) ))
                (.printStackTrace e))))
          (let [doc  (first docs)
                id   (or (:occurrenceID doc) (:scientificNameWithoutAuthorship doc))]
