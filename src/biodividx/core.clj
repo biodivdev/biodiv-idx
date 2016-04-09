@@ -3,12 +3,13 @@
   (:require [clojure.data.json :as json])
   (:require [clojure.core.async :refer [<! <!! >! >!! chan close! go-loop]])
   (:require [taoensso.timbre :as log])
+  (:require [environ.core :refer [env]])
   (:gen-class))
 
-(def taxadata "http://taxadata/api/v2")
-(def dwc-bot "http://dwcbot:8383")
-(def dwc "http://dwcservices/api/v1")
-(def es "http://elasticsearch:9200/biodiv")
+(def taxadata (or (env :taxadata-url) "http://taxadata/api/v2"))
+(def dwc-bot (or (env :dwc-bot-url) "http://dwcbot:8383"))
+(def dwc (or (env :dwc-services-url) "http://dwcservices/api/v1"))
+(def es (or (env :elasticsearch-url) "http://elasticsearch:9200/biodiv"))
 
 (defn get-json
   [& url] 
@@ -34,9 +35,11 @@
 (defn delete [spp]
   (try
     (->> 
-      (-> spp
-        :scientificNameWithoutAuthorship
-        (.replace " " "%20"))
+      (str "\""
+        (-> spp
+          :scientificNameWithoutAuthorship
+          (.replace " " "%20"))
+        "\"")
       (str es "/_query?q=scientificNameWithoutAuthorship:")
       (wat)
       (http/delete)
@@ -66,6 +69,27 @@
            (map :scientificNameWithoutAuthorship (cons spp (:synonyms spp)))]))
       (recur (<! families)))))
 
+(defn mksearch
+  [spp]
+  (str dwc-bot
+    (->
+      (str "/search?q="
+           (str "("
+             (apply str
+                (interpose " AND "
+                  (for [part (.split spp " ")]
+                    (str "scientificName:" part))))
+                                       ")")
+           "%20OR%20"
+           (str "("
+             (apply str
+                (interpose " AND "
+                  (for [part (.split spp " ")]
+                    (str "scientificNameWithoutAuthorship:" part))))
+                ")"))
+    (.replaceAll " " "%20")
+    (.replaceAll ":" "%3A"))))
+
 (defn species->occurrences
   [species occurrences]
   (go-loop [[spp names] (<! species)]
@@ -74,7 +98,7 @@
      (>! occurrences 
          [spp
           (reduce concat
-            (map (fn [n] (get-json dwc-bot "/search?q=" (.replace n " " "%20" ))) names))])
+            (map (fn [n] (get-json (mksearch n))) names))])
      (recur (<! species)))))
 
 (defn occurrences->results
@@ -131,30 +155,52 @@
                 (assoc doc :timestamp (System/currentTimeMillis) :id id))))))
      (recur (<! results)))))
 
-(defn run
+(defn run-all
   [] 
   (let [sources     (chan 1)
         families    (chan 2)
         species     (chan 5)
         occurrences (chan 2)
         results     (chan 5)]
+
   (sources->families sources families)
   (families->species families species results)
   (species->occurrences species occurrences)
   (occurrences->results occurrences results)
   (results->db results)
 
-  (doseq [source (get-json "http://taxadata/api/v2/sources")]
+  (doseq [source (get-json (str taxadata "/sources" ))]
     (>!! sources source))))
+
+(defn run-single
+  [spp]
+  (let [species     (chan 5)
+        occurrences (chan 2)
+        results     (chan 5)]
+
+  (log/info (str "Will do only " spp))
+
+  (species->occurrences species occurrences)
+  (occurrences->results occurrences results)
+  (results->db results)
+
+  (let [taxon (get-json (str taxadata "/flora/specie/" (.replace spp " " "%20")))]
+    (delete taxon)
+    (>!! results [(assoc taxon :type "taxon")])
+    (>!! species
+        [(:scientificNameWithoutAuthorship taxon)
+         (map :scientificNameWithoutAuthorship (cons taxon (:synonyms taxon)))]))))
 
 (defn -main 
   [ & args ]
   (log/info "Starting...")
-  (Thread/sleep (* 15 1000 ))
-  (create-db)
-  (while true 
-    (log/info "Will run")
-    (run)
-    (Thread/sleep (* 12 60 60 1000))
-    (log/info "Will rest.")))
+  (log/info taxadata)
+  (log/info dwc-bot)
+  (log/info dwc)
+  (log/info es)
+  #_(create-db)
+  (log/info "Will start now")
+  (if (first args)
+    (run-single (first args))
+    (run-all)))
 

@@ -8,6 +8,7 @@
                  [org.clojure/core.async "0.2.374"]
                  [com.taoensso/timbre "4.1.4"]
                  [org.clojure/data.json "0.2.5"]
-                 [clj-http-lite "0.3.0"]]
+                 [clj-http-lite "0.3.0"]
+                 [environ "1.0.2"]]
   :profiles {:uberjar {:aot :all}
              :jar {:aot :all}})
