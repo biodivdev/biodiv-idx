@@ -137,22 +137,23 @@
   (go-loop [result (<! results)]
    (when-not (nil? result)
      (log/info "Will save" (:scientificNameWithoutAuthorship (first result)) (count result))
-     (loop [docs result items []]
-       (if (empty? docs)
-         (try
-           (let [body (apply str (interpose "\n" (map json/write-str items)))]
-             (http/post (str es "/_bulk") {:body (str body "\n")}))
-           (log/info "Saved " (:scientificNameWithoutAuthorship (first result)) (count result))
-           (catch Exception e
-             (do (log/warn "Error saving " (:scientificNameWithoutAuthorship (first result)) (.getMessage e))
-               (log/warn "Error body" (apply str (map json/write-str items) ))
-               (.printStackTrace e))))
-         (let [doc  (first docs)
-               id   (or (:occurrenceID doc) (:scientificNameWithoutAuthorship doc))]
-           (recur (rest docs)
-              (conj items 
-                {:index {:_index "biodiv" :_type (:type doc) :_id id}}
-                (assoc doc :timestamp (System/currentTimeMillis) :id id))))))
+     (when-not (empty? result)
+       (loop [docs result items []]
+         (if (empty? docs)
+           (try
+             (let [body (apply str (interpose "\n" (map json/write-str items)))]
+               (http/post (str es "/_bulk") {:body (str body "\n")}))
+             (log/info "Saved " (:scientificNameWithoutAuthorship (first result)) (count result))
+             (catch Exception e
+               (do (log/warn "Error saving " (:scientificNameWithoutAuthorship (first result)) (.getMessage e))
+                 (log/warn "Error body" (apply str (map json/write-str items) ))
+                 (.printStackTrace e))))
+           (let [doc  (first docs)
+                 id   (or (:occurrenceID doc) (:scientificNameWithoutAuthorship doc))]
+             (recur (rest docs)
+                (conj items 
+                  {:index {:_index "biodiv" :_type (:type doc) :_id id}}
+                  (assoc doc :timestamp (System/currentTimeMillis) :id id)))))))
      (recur (<! results)))))
 
 (defn run-all
@@ -202,5 +203,6 @@
   (log/info "Will start now")
   (if (first args)
     (run-single (first args))
-    (run-all)))
+    (run-all))
+  (Thread/sleep (* 24 60 60 1000)))
 
