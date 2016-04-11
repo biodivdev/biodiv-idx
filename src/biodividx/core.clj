@@ -14,37 +14,44 @@
 (defn get-json
   [& url] 
   (log/info "Get JSON"(apply str url ))
-  (:result (json/read-str (:body (http/get (apply str url))) :key-fn keyword)))
+  (try
+    (:result (json/read-str (:body (http/get (apply str url))) :key-fn keyword))
+    (catch Exception e 
+      (log/warn (str "Failled get JSON " (apply str url)  (.getMessage e))))))
 
 (defn post-json
   [url body] 
   (log/info "POST JSON" url)
-  (-> 
-    (http/post url {:content-type :json :body (json/write-str body)})
-    :body
-    (json/read-str :key-fn keyword)))
+  (try
+    (-> 
+      (http/post url {:content-type :json :body (json/write-str body)})
+      :body
+      (json/read-str :key-fn keyword))
+    (catch Exception e 
+      (log/warn (str "Failled POST JSON " (apply str url)  (.getMessage e))))))
 
 (defn create-db
   [] (try
-      (http/post "http://elasticsearch:9200/biodiv")
-        (catch Exception e (.printStackTrace e))))
+      (http/post es)
+      (catch Exception e (log/info (.getMessage e)))))
 
 (defn wat
   [w] (log/info w) w)
 
 (defn delete [spp]
+  (log/info (str "Will delete " (:scientificNameWithoutAuthorship spp)))
   (try
-    (->> 
-      (str "\""
-        (-> spp
-          :scientificNameWithoutAuthorship
-          (.replace " " "%20"))
-        "\"")
-      (str es "/_query?q=scientificNameWithoutAuthorship:")
-      (wat)
-      (http/delete)
-      (:body)
-      (log/info))
+    (do
+      (->> 
+        (str "\""
+          (-> spp
+            :scientificNameWithoutAuthorship
+            (.replace " " "%20"))
+          "\"")
+        (str es "/_query?q=scientificNameWithoutAuthorship:")
+        (http/delete)
+        (:body))
+        (log/info (str "Deleted " (:scientificNameWithoutAuthorship spp))))
     (catch Exception e (log/warn (.getMessage e)))))
 
 (defn sources->families
@@ -106,13 +113,14 @@
   (go-loop [[spp occs] (<! occurrences)]
     (when-not (nil? occs)
       (log/info "Got occs for" spp (count occs))
+      (>! results (map #(assoc % :type "occurrence" :scientificNameWithoutAuthorship spp) occs))
       (try
-        (>! results (map #(assoc % :type "occurrence" :scientificNameWithoutAuthorship spp) occs))
         (let [result (post-json (str dwc "/analysis/all") occs)]
           (log/info "Got result for" spp)
           (>! results
-             (map #(assoc % :scientificNameWithoutAuthorship spp)
-              [ {:type "count" 
+             (map
+               #(assoc % :scientificNameWithoutAuthorship spp)
+               [{:type "count" 
                  :occurrences (dissoc (:occurrences result) :all :recent :historic)
                  :points (dissoc (:points result) :all :recent :historic :geo)}
                 {:type "geo" :geo (get-in result [:points :geo])}
@@ -129,31 +137,37 @@
                 {:risk-assessment (:risk-assessment result) :main-risk-assessment (first (:risk-assessment result)) :type "risk_assessment"}
                ])))
         (catch Exception e
-         (do (log/warn "Error calculating results" spp e) (.printStackTrace e))))
+         (do (log/warn "Error calculating results" spp e))))
       (recur (<! occurrences)))))
+
+(defn prepare-doc
+  [doc]
+   (let [id (or (:occurrenceId doc) (:scientificNameWithoutAuthorship doc))]
+     [{:index {:_index "biodiv" :_type (:type doc) :_id id}}
+      (assoc doc :timestamp (System/currentTimeMillis) :id id)]))
+
+(defn make-body
+  [docs] 
+  (->>
+    (map prepare-doc docs)
+    (flatten)
+    (map json/write-str)
+    (interpose "\n")
+    (apply str)))
 
 (defn results->db
   [results]
   (go-loop [result (<! results)]
    (when-not (nil? result)
-     (log/info "Will save" (:scientificNameWithoutAuthorship (first result)) (count result))
      (when-not (empty? result)
-       (loop [docs result items []]
-         (if (empty? docs)
-           (try
-             (let [body (apply str (interpose "\n" (map json/write-str items)))]
-               (http/post (str es "/_bulk") {:body (str body "\n")}))
+       (log/info "Will save" (:scientificNameWithoutAuthorship (first result)) (:type (first result)) (count result))
+       (let [body (str (make-body result) "\n")]
+         (try
+             (http/post (str es "/_bulk") {:body body})
              (log/info "Saved " (:scientificNameWithoutAuthorship (first result)) (count result))
-             (catch Exception e
-               (do (log/warn "Error saving " (:scientificNameWithoutAuthorship (first result)) (.getMessage e))
-                 (log/warn "Error body" (apply str (map json/write-str items) ))
-                 (.printStackTrace e))))
-           (let [doc  (first docs)
-                 id   (or (:occurrenceID doc) (:scientificNameWithoutAuthorship doc))]
-             (recur (rest docs)
-                (conj items 
-                  {:index {:_index "biodiv" :_type (:type doc) :_id id}}
-                  (assoc doc :timestamp (System/currentTimeMillis) :id id)))))))
+           (catch Exception e
+             (do (log/warn "Error saving " (:scientificNameWithoutAuthorship (first result)) (.getMessage e))
+                 (log/warn "Error body" body))))))
      (recur (<! results)))))
 
 (defn run-all
