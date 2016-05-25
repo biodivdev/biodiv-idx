@@ -7,7 +7,7 @@
   (:gen-class))
 
 (def taxadata (or (env :taxadata-url) "http://taxadata/api/v2"))
-(def dwc-bot (or (env :dwc-bot-url) "http://dwcbot:8383"))
+(def dwc-bot (or (env :dwc-bot-url) "http://dwcbot"))
 (def dwc (or (env :dwc-services-url) "http://dwcservices/api/v1"))
 (def es (or (env :elasticsearch-url) "http://elasticsearch:9200/biodiv"))
 
@@ -213,6 +213,7 @@
   (log/info dwc-bot)
   (log/info dwc)
   (log/info es)
+  (Thread/sleep (* 5 1000))
   #_(create-db)
   (log/info "Will start now")
   (if (first args)

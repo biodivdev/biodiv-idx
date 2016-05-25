@@ -1,7 +1,7 @@
 (defproject biodividx "0.0.1"
-  :description "Run analysis DarwinCore taxa and occurrences aggregated"
-  :url "http://github.com/diogok/biodivagg"
-  :license {:name "MI"}
+  :description "Run analysis on DarwinCore taxa and occurrences aggregated"
+  :url "http://github.com/diogok/biodiv-idx"
+  :license {:name "MIT"}
   :main biodividx.core
   :source-paths ["src"]
   :dependencies [[org.clojure/clojure "1.8.0"]

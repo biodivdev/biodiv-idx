@@ -1,36 +1,39 @@
-biodividx:
-  image: diogok/lein
-  links:
-    - elasticsearch:elasticsearch
-    - taxadata:taxadata
-    - dwcbot:dwcbot
-    - dwc:dwcservices
-  volumes:
-    - .:/project
-    - ~/.m2:/m2
-taxadata:
-  image: diogok/taxadata
-  ports:
-    - 8080:80
-dwc:
-  image: diogok/dwc-services
-  ports:
-    - 8484:80
-dwcbot:
-  image: diogok/dwc-bot
-  ports:
-    - 8383:8383
-  volumes:
-    - /var/data/dwc-bot:/var/data/dwc-bot:rw
-elasticsearch:
-  image: diogok/elasticsearch
-  ports:
-    - 9200:9200
-  volumes:
-    - /var/data/dwc-elasticsearch/data:/usr/share/elasticsearch/data:rw
-kibana:
-  image: diogok/kibana
-  ports:
-    - 8282:8001
-  links:
-    - elasticsearch:elasticsearch
+version: "2"
+services:
+  biodividx:
+    image: diogok/lein
+    volumes:
+      - .:/project
+      - ~/.m2:/m2
+    networks:
+      - biodiv
+  taxadata:
+    image: diogok/taxadata
+    ports:
+      - 8080:80
+    networks:
+      - biodiv
+  dwcservices:
+    image: diogok/dwc-services
+    ports:
+      - 8181:80
+    networks:
+      - biodiv
+  dwcbot:
+    image: diogok/dwc-bot
+    ports:
+      - 8282:8383
+    volumes:
+      - /var/data/dwc-bot:/var/data/dwc-bot:rw
+    networks:
+      - biodiv
+  elasticsearch:
+    image: diogok/elasticsearch
+    ports:
+      - 9200:9200
+    volumes:
+      - /var/data/dwc-elasticsearch/data:/usr/share/elasticsearch/data:rw
+    networks:
+      - biodiv
+networks:
+  biodiv:
