@@ -22,7 +22,7 @@ services:
   dwcbot:
     image: diogok/dwc-bot
     ports:
-      - 8282:8383
+      - 8282:80
     volumes:
       - /var/data/dwc-bot:/var/data/dwc-bot:rw
     networks:

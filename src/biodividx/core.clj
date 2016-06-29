@@ -209,14 +209,76 @@
         [(:scientificNameWithoutAuthorship taxon)
          (map :scientificNameWithoutAuthorship (cons taxon (:synonyms taxon)))]))))
 
+(defn wait-es
+  "Wait for ElasticSearch to be ready"
+  []
+  (let [done (atom false)]
+    (while (not @done)
+      (try 
+        (log/info (str "Waiting: " es))
+        (let [r (http/get es {:throw-exceptions false})]
+          (if (= 200 (:status r))
+            (reset! done true)
+            (Thread/sleep 1000)))
+        (catch Exception e 
+          (do
+            (log/warn (.toString e))
+            (Thread/sleep 1000)))))
+    (log/info (str "Done: " es))))
+
+(defn wait-taxadata
+  "Wait for Taxadata to be ready"
+  []
+  (let [done (atom false)]
+    (while (not @done)
+      (try 
+        (log/info (str "Waiting: " taxadata))
+        (let [r (http/get (str taxadata "/status") {:throw-exceptions false})]
+          (if (= "done" (:status (json/read-str (:body r) :key-fn keyword)))
+            (reset! done true)
+            (do
+              (log/info (json/read-str (:body r)))
+              (Thread/sleep 1000))))
+        (catch Exception e 
+          (do
+            (log/warn (.toString e))
+            (Thread/sleep 1000)))))
+    (log/info (str "Done: " taxadata))))
+
+(defn wait-dwcbot
+  "Wait for DWC-BOT to be ready"
+  []
+  (let [done (atom false)]
+    (while (not @done)
+      (try 
+        (log/info (str "Waiting: " dwc-bot))
+        (let [r (http/get (str dwc-bot "/status") {:throw-exceptions false})]
+          (if (= "idle" (:status (json/read-str (:body r) :key-fn keyword)))
+            (reset! done true)
+            (do
+              (log/info (json/read-str (:body r)))
+              (Thread/sleep 15000))))
+        (catch Exception e 
+          (do
+            (log/warn (.toString e))
+            (Thread/sleep 15000)))))
+    (log/info (str "Done: " dwc-bot))))
+
 (defn -main 
   [ & args ]
   (log/info "Starting...")
+
   (log/info taxadata)
   (log/info dwc-bot)
   (log/info dwc)
   (log/info es)
+
   (Thread/sleep (* 5 1000))
+
+  (wait-es)
+  (wait-taxadata)
+  (wait-dwcbot)
+
   #_(create-db)
   (log/info "Will start now")
   (if (first args)
