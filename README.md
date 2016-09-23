@@ -1,6 +1,8 @@
 # Biodiv-IDX
 
-An indexer, reads taxonomy from [taxadata](http://github.com/diogok/taxadata), combine with occurrences from [dwc-bot](http://github.com/diogok/dwc-bot) and pass them thru analisys on [dwc-services](http://github.com/diogok/dwc-services) to index them on ElasticSearch and make available on [biodiv-ui](http://github.com/diogok/biodiv-ui).
+Index biodiversity information on ElasticSearch (taxa and occurrences) to generate distribution analysis and risk assessment.
+
+[It is part of a set of apps](https://github.com/diogok/biodiv-compse)
 
 ## License
 
