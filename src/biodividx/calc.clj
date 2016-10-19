@@ -11,35 +11,30 @@
   [] (System/currentTimeMillis))
 
 (defn get-results
-  [[spp-name occs] out]
+  [[spp occs] out]
   (go
-    (log/info "Got occs for" spp-name (count occs))
+    (log/info "Got occs for" (:scientificNameWithoutAuthorship spp) (count occs))
     (try
       (let [result (post-json (str dwc "/analysis/all") occs)]
-        (log/info "Got result for" spp-name)
+        (log/info "Got result for" (:scientificNameWithoutAuthorship spp))
         (>! out
-           (map
-             #(assoc % :scientificNameWithoutAuthorship spp-name :timestamp (now))
-             [{:type "count" 
-               :occurrences (dissoc (:occurrences result) :all :recent :historic)
-               :points (dissoc (:points result) :all :recent :historic :geo)}
-              {:type "geo" :geo (get-in result [:points :geo])}
-              (assoc (get-in result [:eoo :historic]) :type "eoo_historic")
-              (assoc (get-in result [:eoo :historic]) :type "eoo_historic")
-              (assoc (get-in result [:eoo :recent]) :type "eoo_recent")
-              (assoc (get-in result [:eoo :all]) :type "eoo")
-              (dissoc (assoc (get-in result [:aoo-variadic :historic]) :type "aoo_variadic_historic") :grid)
-              (dissoc (assoc (get-in result [:aoo-variadic :recent]) :type "aoo_variadic_recent") :grid)
-              (dissoc (assoc (get-in result [:aoo-variadic :all]) :type "aoo_variadic") :grid)
-              (dissoc (assoc (get-in result [:aoo :historic]) :type "aoo_historic") :grid)
-              (dissoc (assoc (get-in result [:aoo :recent]) :type "aoo_recent") :grid)
-              (dissoc (assoc (get-in result [:aoo :all]) :type "aoo") :grid)
-              (assoc (get-in result [:clusters :historic]) :type "clusters_historic")
-              (assoc (get-in result [:clusters :recent]) :type "clusters_recent")
-              (assoc (get-in result [:clusters :all]) :type "clusters")
-              {:risk-assessment (:risk-assessment result) :main-risk-assessment (first (:risk-assessment result)) :type "risk_assessment"}
-             ])))
+           (-> result
+                (merge spp)
+                (assoc :type "analysis")
+                (assoc :timestamp (now))
+                (assoc :main-risk-assessment (first (:risk-assessment result)))
+                (assoc :occurrences
+                  (dissoc (:occurrences result) :historic :recent))
+                (assoc :points
+                  (dissoc (:points result) :historic :recent :geo))
+                (dissoc :quality)
+                (update-in [:aoo :all] dissoc :grid)
+                (update-in [:aoo :recent] dissoc :grid)
+                (update-in [:aoo :historic] dissoc :grid)
+                (update-in [:aoo-variadic :all] dissoc :grid)
+                (update-in [:aoo-variadic :recent] dissoc :grid)
+                (update-in [:aoo-variadic :historic] dissoc :grid))))
       (catch Exception e
-       (do (log/error "Error calculating results" spp-name e))))
+       (do (log/error "Error calculating results" spp e))))
     (close! out)))
 

@@ -1,4 +1,4 @@
-(defproject biodividx "0.0.1"
+(defproject biodividx "0.0.2"
   :description "Run analysis on DarwinCore taxa and occurrences aggregated"
   :url "http://github.com/diogok/biodiv-idx"
   :license {:name "MIT"}

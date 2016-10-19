@@ -1,15 +1,10 @@
 version: "2"
 services:
-  taxabot:
-    image: diogok/taxa-bot
-    environment:
-      ELASTICSEARCH: http://elasticsearch:9200
-      INDEX: dwc
-  dwcbot:
-    image: diogok/dwc-bot-es
-    environment:
-      ELASTICSEARCH: http://elasticsearch:9200
-      INDEX: dwc
+  #dwcbot:
+  #  image: diogok/dwc-bot-es
+  #  environment:
+  #    ELASTICSEARCH: http://elasticsearch:9200
+  #    INDEX: dwc
   dwcservices:
     image: diogok/dwc-services
     ports:
