@@ -2,22 +2,18 @@
   "analysis": {
     "properties": {
       "family": {
-        "type": "string"
-        ,"store":true
+        "type": "text"
         ,"fields": {
-          "raw": {
-            "type": "string"
-            ,"index": "not_analyzed"
+          "keyword": {
+            "type": "keyword"
           }
         }
       }
       ,"scientificNameWithoutAuthorship": {
-        "type": "string",
-        "store": true
+        "type": "text",
         ,"fields": {
-          "raw": {
-            "type": "string",
-            "index": "not_analyzed"
+          "keyword": {
+            "type": "keyword"
           }
         }
       }
@@ -27,14 +23,7 @@
       ,"main-risk-assessment": {
         "properties":{
           "category": {
-            "type": "string",
-            "store": true
-            ,"fields": {
-              "raw": {
-                "type": "string",
-                "index": "not_analyzed"
-              }
-            }
+            "type": "keyword"
           }
         }
       }
@@ -42,33 +31,12 @@
         "properties":{
           "count": {
             "type":"long"
-            ,"store": true
-            ,"fields": {
-              "raw": {
-                "type": "string",
-                "index": "not_analyzed"
-              }
-            }
           }
           ,"count_historic": {
             "type":"long"
-            ,"store": true
-            ,"fields": {
-              "raw": {
-                "type": "string",
-                "index": "not_analyzed"
-              }
-            }
           }
           ,"count_recent": {
             "type":"long"
-            ,"store": true
-            ,"fields": {
-              "raw": {
-                "type": "string",
-                "index": "not_analyzed"
-              }
-            }
           }
         }
       }
@@ -78,13 +46,6 @@
             "properties":{
               "area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -92,13 +53,6 @@
             "properties":{
               "area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -106,13 +60,6 @@
             "properties":{
               "area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -124,13 +71,6 @@
             "properties":{
               "area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -138,13 +78,6 @@
             "properties":{
               "area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -152,13 +85,6 @@
             "properties":{
               "area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -170,13 +96,6 @@
             "properties":{
               "area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -184,13 +103,6 @@
             "properties":{
               "area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -198,13 +110,6 @@
             "properties":{
               "area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -216,23 +121,9 @@
             "properties":{
               "count":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
               ,"area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -240,23 +131,9 @@
             "properties":{
               "count":{
                 "type":"long"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
               ,"area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }
@@ -264,23 +141,9 @@
             "properties":{
               "count":{
                 "type":"long"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
               ,"area":{
                 "type":"double"
-                ,"store": true
-                ,"fields": {
-                  "raw": {
-                    "type": "string",
-                    "index": "not_analyzed"
-                  }
-                }
               }
             }
           }

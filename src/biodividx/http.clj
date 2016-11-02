@@ -22,6 +22,6 @@
       :body
       (json/read-str :key-fn keyword))
     (catch Exception e 
-      (do (log/error (str "Failed POST JSON " (apply str url)))
+      (do (log/error (str "Failed POST JSON " (apply str url)) body)
           (log/error e)))))
 

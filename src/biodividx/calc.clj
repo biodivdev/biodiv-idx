@@ -1,11 +1,10 @@
 (ns biodividx.calc
   (:use biodividx.http)
+  (:require [dwc-analysis.all :refer [all-analysis]])
   (:require [clojure.core.async :refer [<! <!! >! >!! chan close! go-loop go]])
   (:require [taoensso.timbre :as log])
   (:require [environ.core :refer [env]])
   (:gen-class))
-
-(def dwc (or (env :dwc-services) "http://localhost:8181/api/v1"))
 
 (defn now
   [] (System/currentTimeMillis))
@@ -15,7 +14,7 @@
   (go
     (log/info "Got occs for" (:scientificNameWithoutAuthorship spp) (count occs))
     (try
-      (let [result (post-json (str dwc "/analysis/all") occs)]
+      (let [result (all-analysis occs)]
         (log/info "Got result for" (:scientificNameWithoutAuthorship spp))
         (>! out
            (-> result

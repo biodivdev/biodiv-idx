@@ -50,7 +50,6 @@
 (defn -main 
   [ & args ]
   (log/info "Starting...")
-  (log/info dwc)
   (log/info es)
   (Thread/sleep (* 5 1000))
   (wait-es)

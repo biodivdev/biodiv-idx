@@ -17,7 +17,7 @@
   (->> {:size 0
         :aggs 
          {:families
-           {:aggs {:families {:terms {:field "family" :size 0}}}
+           {:aggs {:families {:terms {:field "family.keyword" :size 999999}}}
             :filter {:bool {:must [{:term {:taxonomicStatus "accepted"}} {:term {:source source}}]}}} } }
     (post-json (str es "/" idx "/taxon/_search"))
     :aggregations
@@ -29,11 +29,11 @@
 
 (defn get-species-0
   [family]
-  (->> {:size 999
+  (->> {:size 9999
         :query 
           {:bool
             {:must 
-             [{:term {:family family}}
+             [{:term {:family.keyword family}}
               {:term {:taxonRank "species"}}
               {:term {:taxonomicStatus "accepted"}}
               {:term {:source source}}]}}}
@@ -50,8 +50,8 @@
             {:must 
              [{:bool
                 {:should
-                  [{:query {:match {:acceptedNameUsage {:query spp-name :type "phrase"}}}}
-                   {:query {:match {:scientificName {:query spp-name :type "phrase"}}}}]}}
+                  [{:match {:acceptedNameUsage {:query spp-name :type "phrase"}}}
+                   {:match {:scientificName {:query spp-name :type "phrase"}}}]}}
               {:term {:taxonRank "species"}} 
               {:term {:taxonomicStatus "synonym"}} 
               {:term {:source source}}]}}}

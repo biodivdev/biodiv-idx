@@ -1,4 +1,4 @@
-(defproject biodividx "0.0.2"
+(defproject biodividx "0.0.3"
   :description "Run analysis on DarwinCore taxa and occurrences aggregated"
   :url "http://github.com/diogok/biodiv-idx"
   :license {:name "MIT"}
@@ -9,6 +9,9 @@
                  [com.taoensso/timbre "4.7.4"]
                  [org.clojure/data.json "0.2.6"]
                  [clj-http-lite "0.3.0"]
+                 [dwc-analysis "0.0.31"]
                  [environ "1.1.0"]]
+  :repositories [["osgeo" "http://download.osgeo.org/webdav/geotools/"]
+                 ["clojars" {:sign-releases false}]]
   :profiles {:uberjar {:aot :all}
              :jar {:aot :all}})

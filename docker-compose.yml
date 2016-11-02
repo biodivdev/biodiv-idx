@@ -5,10 +5,6 @@ services:
   #  environment:
   #    ELASTICSEARCH: http://elasticsearch:9200
   #    INDEX: dwc
-  dwcservices:
-    image: diogok/dwc-services
-    ports:
-      - 8181:80
   elasticsearch:
     image: diogok/elasticsearch
     ports:
