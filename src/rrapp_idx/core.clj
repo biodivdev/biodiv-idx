@@ -1,6 +1,7 @@
-(ns biodividx.core
-  (:use biodividx.db)
-  (:use biodividx.calc)
+(ns rrapp-idx.core
+  (:use rrapp-idx.db)
+  (:use rrapp-idx.calc)
+  (:use rrapp-idx.config)
   (:require [clj-http.lite.client :as client])
   (:require [clojure.core.async :refer [<! <!! >! >!! chan close! go go-loop pipeline pipeline-blocking pipeline-async]])
   (:require [taoensso.timbre :as log])
@@ -36,8 +37,8 @@
   (let [done (atom false)]
     (while (not @done)
       (try 
-        (log/info (str "Waiting: " es))
-        (let [r (client/get (str es "/" idx) {:throw-exceptions false})]
+        (log/info (str "Waiting: " (config :elasticsearch)))
+        (let [r (client/get (str (config :elasticsearch) "/" (config :index)) {:throw-exceptions false})]
           (if (= 200 (:status r))
             (reset! done true)
             (Thread/sleep 1000)))
@@ -45,12 +46,12 @@
           (do
             (log/warn (.toString e))
             (Thread/sleep 1000)))))
-    (log/info (str "Done: " es))))
+    (log/info (str "Done: " (config :elasticsearch)))))
 
 (defn -main 
   [ & args ]
   (log/info "Starting...")
-  (log/info es)
+  (log/info (config :elasticsearch))
   (Thread/sleep (* 5 1000))
   (wait-es)
   (log/info "Will start now")
@@ -59,7 +60,7 @@
   (let [keep (atom true)]
     (while @keep
       (run-all)
-      (swap! keep (fn [_] (or (= (env :loop) "true") false)))
+      (swap! keep (fn [_] (or (= (config :loop) "true") false)))
       (when @keep
         (Thread/sleep (* 24 60 60 1000))))))
 

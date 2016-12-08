@@ -1,8 +1,8 @@
-(defproject biodividx "0.0.3"
+(defproject rrapp-idx "0.0.3"
   :description "Run analysis on DarwinCore taxa and occurrences aggregated"
-  :url "http://github.com/diogok/biodiv-idx"
+  :url "http://github.com/biodivdev/rrapp-idx"
   :license {:name "MIT"}
-  :main biodividx.core
+  :main rrapp-idx.core
   :source-paths ["src"]
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/core.async "0.2.391"]

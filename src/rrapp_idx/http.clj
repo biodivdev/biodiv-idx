@@ -1,4 +1,4 @@
-(ns biodividx.http
+(ns rrapp-idx.http
   (:require [clj-http.lite.client :as client])
   (:require [clojure.data.json :as json])
   (:require [taoensso.timbre :as log])

@@ -1,16 +1,11 @@
-(ns biodividx.db
-  (:use biodividx.http)
+(ns rrapp-idx.db
+  (:use rrapp-idx.config)
+  (:use rrapp-idx.http)
   (:require [clj-http.lite.client :as client])
   (:require [clojure.data.json :as json])
   (:require [clojure.core.async :refer [<! <!! >! >!! chan close! go-loop go]])
   (:require [taoensso.timbre :as log])
-  (:require [environ.core :refer [env]])
   (:gen-class))
-
-(def es  (or (env :elasticsearch) "http://localhost:9200"))
-(def idx (or (env :index) "dwc"))
-(def index idx)
-(def source (or (env :taxon_resource) "lista_especies_flora_brasil"))
 
 (defn get-families
   [] 
@@ -18,8 +13,8 @@
         :aggs 
          {:families
            {:aggs {:families {:terms {:field "family.keyword" :size 999999}}}
-            :filter {:bool {:must [{:term {:taxonomicStatus "accepted"}} {:term {:source source}}]}}} } }
-    (post-json (str es "/" idx "/taxon/_search"))
+            :filter {:bool {:must [{:term {:taxonomicStatus "accepted"}} {:term {:source (config :source)}}]}}} } }
+    (post-json (str (config :elasticsearch) "/" (config :index) "/taxon/_search"))
     :aggregations
     :families
     :families
@@ -36,8 +31,8 @@
              [{:term {:family.keyword family}}
               {:term {:taxonRank "species"}}
               {:term {:taxonomicStatus "accepted"}}
-              {:term {:source source}}]}}}
-    (post-json (str es "/" idx "/taxon/_search"))
+              {:term {:source (config :source)}}]}}}
+    (post-json (str (config :elasticsearch) "/" (config :index) "/taxon/_search"))
     :hits
     :hits
     (map :_source)))
@@ -54,8 +49,8 @@
                    {:match {:scientificName {:query spp-name :type "phrase"}}}]}}
               {:term {:taxonRank "species"}} 
               {:term {:taxonomicStatus "synonym"}} 
-              {:term {:source source}}]}}}
-    (post-json (str es "/" idx "/taxon/_search"))
+              {:term {:source (config :source)}}]}}}
+    (post-json (str (config :elasticsearch) "/" (config :index) "/taxon/_search"))
     :hits
     :hits
     (map :_source)))
@@ -70,7 +65,7 @@
               {:match 
                {:scientificNameWithoutAuthorship 
                 {:query spp-name :type "phrase"}}})}}}
-    (post-json (str es "/" idx "/occurrence/_search"))
+    (post-json (str (config :elasticsearch) "/" (config :index) "/occurrence/_search"))
     :hits
     :hits
     (map :_source)))
@@ -110,7 +105,7 @@
      (do
        (log/info "Will save" (:scientificNameWithoutAuthorship result))
        (try
-         (client/post (str es "/" index "/" (:type result) "/" (:id result)) {:body (json/write-str result)})
+         (client/post (str (config :elasticsearch) "/" (config :index) "/" (:type result) "/" (:id result)) {:body (json/write-str result)})
          (log/info "Saved " (:scientificNameWithoutAuthorship result))
          (catch Exception e
            (log/error "Error saving" (:scientificNameWithoutAuthorship result) e)))
@@ -123,7 +118,7 @@
       (log/info map-type map-body)
       (log/info 
         (:body
-          (client/put (str es "/" index "/_mapping/" (name map-type))
+          (client/put (str (config :elasticsearch) "/" (config :index) "/_mapping/" (name map-type))
             {:body  (json/write-str map-body)
              :throw-exceptions false
              :headers {"Content-Type" "application/json"}}))))))

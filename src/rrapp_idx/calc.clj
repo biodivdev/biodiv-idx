@@ -1,5 +1,4 @@
-(ns biodividx.calc
-  (:use biodividx.http)
+(ns rrapp-idx.calc
   (:require [dwc-analysis.all :refer [all-analysis]])
   (:require [clojure.core.async :refer [<! <!! >! >!! chan close! go-loop go]])
   (:require [taoensso.timbre :as log])
