@@ -1,4 +1,4 @@
-(defproject rrapp-idx "0.0.3"
+(defproject rrapp-idx "0.0.4"
   :description "Run analysis on DarwinCore taxa and occurrences aggregated"
   :url "http://github.com/biodivdev/rrapp-idx"
   :license {:name "MIT"}

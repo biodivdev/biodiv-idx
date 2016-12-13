@@ -17,12 +17,14 @@
 (defn run-all
   [] 
   (let [families    (chan 2)
+        families-d  (chan 2)
         species     (chan 5)
         names       (chan 5)
         occurrences (chan 2)
         results     (chan 5)]
 
-  (pipe families get-species species)
+  (pipe families clean-family families-d)
+  (pipe families-d get-species species)
   (pipe species get-names names)
   (pipe names get-occurrences occurrences)
   (pipe occurrences get-results results)

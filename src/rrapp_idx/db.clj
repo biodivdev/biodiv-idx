@@ -70,6 +70,15 @@
     :hits
     (map :_source)))
 
+(defn clean-family
+  [family out] 
+  (go
+    (log/info "Clean species of" family)
+    (post-json (str (config :elasticsearch) "/" (config :index) "/analysis/_delete_by_query")
+      {:query {:term {:family.keyword family}}})
+    (>! out family)
+    (close! out)))
+
 (defn get-species
   [family out] 
   (go
